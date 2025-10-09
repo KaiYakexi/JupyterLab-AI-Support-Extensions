@@ -10,7 +10,7 @@ import {ICommandPalette, MainAreaWidget} from "@jupyterlab/apputils";
 import {INotebookTracker, NotebookActions, NotebookPanel, NotebookTracker} from '@jupyterlab/notebook'
 import {Widget} from '@lumino/widgets';
 import {IOutput} from '@jupyterlab/nbformat'
-import {PageConfig, URLExt} from '@jupyterlab/coreutils';
+import {PageConfig} from '@jupyterlab/coreutils';
 import {IRenderMime, IRenderMimeRegistry, RenderMimeRegistry, standardRendererFactories} from "@jupyterlab/rendermime";
 
 interface LLMResponse {
@@ -48,7 +48,6 @@ class LLMResponseWidget extends Widget{
       const traceback = error['traceback']?.toString()??'UndefinedErrorValue';
       const errorName = error['ename']?.toString()??'UndefinedErrorValue';
       const errorData={execution_count:executionCounter,cellIdentifier:cellIdentifier,traceback:traceback,errorName:errorName,sourceCode:sourceCode} as errorData;
-      console.log(errorData);
       const promptContainer= document.createElement('div');
       promptContainer.classList.add('prompt-container');
       const inputField = document.createElement('textarea');
@@ -89,7 +88,6 @@ class LLMResponseWidget extends Widget{
       if (errorHeader!=null){
         errorHeader.innerHTML=`<span class="error-number">Cell [${errorData['execution_count']}]</span> ${errorData['errorName']}`;}
       if (this.errorContainer!=null){
-        console.log(this.errorContainer);
       const model = this._rendermime.createModel({
         data: { 'text/markdown': "#Waiting for result..." }
       })
@@ -113,7 +111,8 @@ class LLMResponseWidget extends Widget{
 
     async function askLLM(executionCounter:String, cellIdentifier:any,errorName:String, traceback:String,sourceCode:String,prompt:String): Promise<any> {
       let token = PageConfig.getToken();
-      const HubLLMEndpoint = 'http://localhost:8533/jupyterhub/services/askLLM/errorLog';
+      const JupyterHubBaseUrl= PageConfig.getOption("JupyterHubBaseUrl");
+      const HubLLMEndpoint = JupyterHubBaseUrl+'/services/askLLM/errorLog';
       const requestData = {'supportType':'customPrompt','cellIdentifier':cellIdentifier,executionCounter: executionCounter,errorName:errorName,traceback:traceback,sourceCode:sourceCode,"customPrompt":prompt};
 
       const response = await fetch(HubLLMEndpoint, {
@@ -133,7 +132,9 @@ class LLMResponseWidget extends Widget{
   };
 
 function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebookTracker: NotebookTracker, notebookPanel:NotebookPanel, restorer:ILayoutRestorer){
-  const JupyterHubBaseUrl = URLExt.join(PageConfig.getBaseUrl());
+  
+  const JupyterHubBaseUrl= PageConfig.getOption("JupyterHubBaseUrl");
+
   let widget: MainAreaWidget<LLMResponseWidget>;
 
   const command: string = 'customSupport:open';
@@ -216,7 +217,7 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
 
   async function logSuccess(execution_count:Number, cellIdentifier:any,outputArray:String,sourceCode:String): Promise<any>{
     let token = PageConfig.getToken();
-    const successEndpoint = JupyterHubBaseUrl+'services/askLLM/successLog';
+    const successEndpoint = JupyterHubBaseUrl+'/services/askLLM/successLog';
     const requestData = {supportType:'customPrompt',cellIdentifier:cellIdentifier,executionCounter: execution_count,outputArray:outputArray,sourceCode:sourceCode};
     const response = await fetch(successEndpoint, {
       method: 'POST',
@@ -235,7 +236,7 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
     const traceback = error['traceback']?.toString()??'UndefinedErrorValue';
     const errorName = error['ename']?.toString()??'UndefinedErrorValue';
     let token = PageConfig.getToken();
-    const successEndpoint = JupyterHubBaseUrl+'services/askLLM/errorLogBeforePrompt';
+    const successEndpoint = JupyterHubBaseUrl+'/services/askLLM/errorLogBeforePrompt';
     const requestData = {'supportType':'customPrompt',cellIdentifier:cellIdentifier,executionCounter: executionCounter,errorName:errorName,traceback:traceback,sourceCode:sourceCode,'logFailureBeforePrompt':true};
     const response = await fetch(successEndpoint, {
       method: 'POST',

@@ -73,7 +73,8 @@ class LLMResponseWidget extends Widget{
 
     async function askLLM(executionCounter:String, cellIdentifier:any,errorName:String, traceback:String,sourceCode:String): Promise<any> {
       let token = PageConfig.getToken();
-      const HubLLMEndpoint = 'http://localhost:8533/jupyterhub/services/askLLM/errorLog';
+      let JupyterHubBaseUrl = PageConfig.getOption("JupyterHubBaseUrl");
+      const HubLLMEndpoint = JupyterHubBaseUrl+'/services/askLLM/errorLog';
       const requestData = {'supportType':'personalizedSupport','cellIdentifier':cellIdentifier,executionCounter: executionCounter,errorName:errorName,traceback:traceback,sourceCode:sourceCode};
 
       const response = await fetch(HubLLMEndpoint, {
@@ -94,12 +95,8 @@ class LLMResponseWidget extends Widget{
 
 function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebookTracker: NotebookTracker, notebookPanel:NotebookPanel, restorer:ILayoutRestorer){
 
+  const JupyterHubBaseUrl = PageConfig.getOption("JupyterHubBaseUrl");
 
-
-
-  
-  
-  console.log('JupyterLab LLM development env extension is actives now Check');
   let widget: MainAreaWidget<LLMResponseWidget>;
 
   notebookTracker.currentChanged.connect(() => {
@@ -186,12 +183,10 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
       console.error('Cell is undefined or null.');
     }
   }});
-  console.log('JupyterLab frontend extension testing is activated now!');
-  console.log('ICommandPalette:',palette);
 
   async function logSuccess(execution_count:Number,cellIdentifier:any,outputArray:String,sourceCode:String): Promise<any>{
     let token = PageConfig.getToken();
-    const successEndpoint = 'http://localhost:8533/jupyterhub/services/askLLM/successLog';
+    const successEndpoint = JupyterHubBaseUrl+'/services/askLLM/successLog';
     const requestData = {'supportType':'personalizedSupport','cellIdentifier':cellIdentifier,executionCounter: execution_count,outputArray:outputArray,sourceCode:sourceCode};
     const response = await fetch(successEndpoint, {
       method: 'POST',

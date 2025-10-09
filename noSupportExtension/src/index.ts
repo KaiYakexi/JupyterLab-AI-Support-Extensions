@@ -46,7 +46,6 @@ class LLMResponseWidget extends Widget{
       const traceback = error['traceback']?.toString()??'UndefinedErrorValue';
       const errorName = error['ename']?.toString()??'UndefinedErrorValue';
       const errorData={execution_count:executionCounter,traceback:traceback,errorName:errorName,sourceCode:sourceCode} as errorData;
-      console.log(errorData);
       const promptContainer= document.createElement('div');
       promptContainer.classList.add('prompt-container');
       const inputField = document.createElement('input');
@@ -87,7 +86,6 @@ class LLMResponseWidget extends Widget{
       if (errorHeader!=null){
         errorHeader.innerHTML=`<span class="error-number">Cell [${errorData['execution_count']}]</span> ${errorData['errorName']}`;}
       if (this.errorContainer!=null){
-        console.log(this.errorContainer);
       const model = this._rendermime.createModel({
         data: { 'text/markdown': "#Waiting for result..." }
       })
@@ -111,7 +109,8 @@ class LLMResponseWidget extends Widget{
 
     async function askLLM(executionCounter:String, errorName:String, traceback:String,sourceCode:String,prompt:String): Promise<any> {
       let token = PageConfig.getToken();
-      const HubLLMEndpoint = 'http://localhost:8533/jupyterhub/services/askLLM/errorLog';
+      let JupyterHubBaseUrl = PageConfig.getOption("JupyterHubBaseUrl")
+      const HubLLMEndpoint = JupyterHubBaseUrl+'/services/askLLM/errorLog';
       const requestData = {"supportType":"noSupport",executionCounter: executionCounter,errorName:errorName,traceback:traceback,sourceCode:sourceCode};
 
       const response = await fetch(HubLLMEndpoint, {
@@ -132,12 +131,8 @@ class LLMResponseWidget extends Widget{
 
 function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebookTracker: NotebookTracker, notebookPanel:NotebookPanel, restorer:ILayoutRestorer){
 
+  const JupyterHubBaseUrl = PageConfig.getOption("JupyterHubBaseUrl")
 
-
-
-  
-  
-  console.log('JupyterLab LLM development env extension is actives now Check');
   let widget: MainAreaWidget<LLMResponseWidget>;
 
   notebookTracker.currentChanged.connect(() => {
@@ -219,12 +214,10 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
    } else {
     }
   }});
-  console.log('JupyterLab frontend extension testing is activated now!');
-  console.log('ICommandPalette:',palette);
 
   async function logSuccess(execution_count:Number, cellIdentifier:any,outputArray:String,sourceCode:String): Promise<any>{
     let token = PageConfig.getToken();
-    const successEndpoint = 'http://localhost:8533/jupyterhub/services/askLLM/successLog';
+    const successEndpoint = JupyterHubBaseUrl+'/services/askLLM/successLog';
     const requestData = {supportType:'noSupport','cellIdentifier':cellIdentifier,executionCounter: execution_count,outputArray:outputArray,sourceCode:sourceCode};
     const response = await fetch(successEndpoint, {
       method: 'POST',
@@ -240,7 +233,7 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
   }
   async function logFailure(executionCounter:String,cellIdentifier:any, errorName:String, traceback:String,sourceCode:String): Promise<any> {
     let token = PageConfig.getToken();
-    const HubLLMEndpoint = 'http://localhost:8533/jupyterhub/services/askLLM/errorLog';
+    const HubLLMEndpoint = JupyterHubBaseUrl+'/services/askLLM/errorLog';
     const requestData = {'supportType':'noSupport','cellIdentifier':cellIdentifier,executionCounter: executionCounter,errorName:errorName,traceback:traceback,sourceCode:sourceCode};
 
     const response = await fetch(HubLLMEndpoint, {

@@ -2,18 +2,27 @@ import {
   JupyterFrontEnd,
   JupyterFrontEndPlugin
 } from '@jupyterlab/application';
-import {PageConfig} from '@jupyterlab/coreutils';
+
+import { PageConfig } from '@jupyterlab/coreutils';
+/**
+ * Initialization data for the extensionmanager extension.
+ */
+
+const setJupyterHubBaseUrl="http://localhost:8533/jupyterhub"
+
 
 const plugin: JupyterFrontEndPlugin<void> = {
-  id: 'LLMWidgetExtensionManager:plugin',
-  description: 'A JupyterLab extension that chooses which LLM Help extension to use.',
+  id: 'extensionmanager:plugin',
+  description: 'Extension which adds the baseurl to the configuration and manages the on/off status of our ai support extensions',
   autoStart: true,
   activate: (app: JupyterFrontEnd) => {
+    PageConfig.setOption("JupyterHubBaseUrl",setJupyterHubBaseUrl)
+    const JupyterHubBaseUrl=PageConfig.getOption("JupyterHubBaseUrl")
 
   async function getUserSupportGroup(): Promise<string> {
 
     let token = PageConfig.getToken();
-    const UserSupportGroupEndpoint = 'http://localhost:8533/jupyterhub/services/askLLM/userSupportGroup';
+    const UserSupportGroupEndpoint = JupyterHubBaseUrl+'/services/askLLM/userSupportGroup';
 
     try{
       const response = await fetch(UserSupportGroupEndpoint, {
@@ -42,8 +51,8 @@ const plugin: JupyterFrontEndPlugin<void> = {
       console.error('Error setting support group:', error);
       window.sessionStorage.setItem('UseExtension', 'noSupport');
     }
-  })();
-}
+  })();  
+  }
 };
 
 export default plugin;

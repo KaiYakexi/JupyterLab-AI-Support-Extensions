@@ -1,8 +1,8 @@
-# LLMWidgetExtensionManager
+# extensionmanager
 
 [![Github Actions Status](/workflows/Build/badge.svg)](/actions/workflows/build.yml)
 
-A JupyterLab extension that chooses which LLM Help extension to use.
+Extension which adds the baseurl to the configuration and manages the on/off status of our ai support extensions
 
 ## Requirements
 
@@ -13,7 +13,7 @@ A JupyterLab extension that chooses which LLM Help extension to use.
 To install the extension, execute:
 
 ```bash
-pip install LLMWidgetExtensionManager
+pip install extensionmanager
 ```
 
 ## Uninstall
@@ -21,7 +21,7 @@ pip install LLMWidgetExtensionManager
 To remove the extension, execute:
 
 ```bash
-pip uninstall LLMWidgetExtensionManager
+pip uninstall extensionmanager
 ```
 
 ## Contributing
@@ -36,7 +36,7 @@ The `jlpm` command is JupyterLab's pinned version of
 
 ```bash
 # Clone the repo to your local environment
-# Change directory to the LLMWidgetExtensionManager directory
+# Change directory to the extensionmanager directory
 # Install package in development mode
 pip install -e "."
 # Link your development version of the extension with JupyterLab
@@ -65,12 +65,12 @@ jupyter lab build --minimize=False
 ### Development uninstall
 
 ```bash
-pip uninstall LLMWidgetExtensionManager
+pip uninstall extensionmanager
 ```
 
 In development mode, you will also need to remove the symlink created by `jupyter labextension develop`
 command. To find its location, you can run `jupyter labextension list` to figure out where the `labextensions`
-folder is located. Then you can remove the symlink named `LLMWidgetExtensionManager` within that folder.
+folder is located. Then you can remove the symlink named `extensionmanager` within that folder.
 
 ### Packaging the extension
 

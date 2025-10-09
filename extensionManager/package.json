@@ -1,7 +1,7 @@
 {
-    "name": "LLMWidgetExtensionManager",
+    "name": "extensionmanager",
     "version": "0.1.0",
-    "description": "A JupyterLab extension that chooses which LLM Help extension to use.",
+    "description": "Extension which adds the baseurl to the configuration and manages the on/off status of our ai support extensions",
     "keywords": [
         "jupyter",
         "jupyterlab",
@@ -12,7 +12,10 @@
         "url": "/issues"
     },
     "license": "BSD-3-Clause",
-    "author": "Student",
+    "author": {
+        "name": "Yasin",
+        "email": "noreply@email.com"
+    },
     "files": [
         "lib/**/*.{d.ts,eot,gif,html,jpg,js,js.map,json,png,svg,woff2,ttf}",
         "style/**/*.{css,js,eot,gif,html,jpg,json,png,svg,woff2,ttf}",
@@ -35,7 +38,7 @@
         "clean": "jlpm clean:lib",
         "clean:lib": "rimraf lib tsconfig.tsbuildinfo",
         "clean:lintcache": "rimraf .eslintcache .stylelintcache",
-        "clean:labextension": "rimraf LLMWidgetExtensionManager/labextension LLMWidgetExtensionManager/_version.py",
+        "clean:labextension": "rimraf extensionmanager/labextension extensionmanager/_version.py",
         "clean:all": "jlpm clean:lib && jlpm clean:labextension && jlpm clean:lintcache",
         "eslint": "jlpm eslint:check --fix",
         "eslint:check": "eslint . --cache --ext .ts,.tsx",
@@ -52,7 +55,8 @@
         "watch:labextension": "jupyter labextension watch ."
     },
     "dependencies": {
-        "@jupyterlab/application": "^4.0.0"
+        "@jupyterlab/application": "^4.4.9",
+        "@jupyterlab/coreutils": "^6.4.9"
     },
     "devDependencies": {
         "@jupyterlab/builder": "^4.0.0",
@@ -75,7 +79,7 @@
         "stylelint-config-standard": "^34.0.0",
         "stylelint-csstree-validator": "^3.0.0",
         "stylelint-prettier": "^4.0.0",
-        "typescript": "~5.0.2",
+        "typescript": "~5.8.0",
         "yjs": "^13.5.0"
     },
     "sideEffects": [
@@ -88,7 +92,7 @@
     },
     "jupyterlab": {
         "extension": true,
-        "outputDir": "LLMWidgetExtensionManager/labextension"
+        "outputDir": "extensionmanager/labextension"
     },
     "eslintIgnore": [
         "node_modules",

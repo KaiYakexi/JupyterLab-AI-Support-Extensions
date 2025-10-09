@@ -1,0 +1,1 @@
+Repository containing the AI support functions implemented for the AI Prompt project. These AI support functions have been implemented as JupyterLab extensions and require a JupyterHub service to communicate with. The extension manager can be used to set the base url of the JupyterHub. To do this change the value of the setJupyterHubBaseUrl variable.
