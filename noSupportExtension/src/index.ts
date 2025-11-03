@@ -224,7 +224,7 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
       headers: {
         'Authorization': `Bearer ${token}`, 
         'Content-Type': 'application/json' },
-      body: JSON.stringify({requestData}),
+      body: JSON.stringify(requestData),
   });
   if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
