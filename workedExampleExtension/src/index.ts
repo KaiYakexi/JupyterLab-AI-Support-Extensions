@@ -84,7 +84,7 @@ class LLMResponseWidget extends Widget{
     async function askLLM(executionCounter:String, cellIdentifier:any,errorName:String, traceback:String,sourceCode:String,hintCounter:String): Promise<any> {
       let token = PageConfig.getToken();
       let JupyterHubBaseUrl= PageConfig.getOption("JupyterHubBaseUrl");
-      const HubLLMEndpoint = JupyterHubBaseUrl='/services/askLLM/errorLog';
+      const HubLLMEndpoint = JupyterHubBaseUrl+'/services/askLLM/errorLog';
       const requestData = {'supportType':supportType,'cellIdentifier':cellIdentifier,executionCounter: executionCounter,errorName:errorName,traceback:traceback,sourceCode:sourceCode,hintCounter:hintCounter};
 
       const response = await fetch(HubLLMEndpoint, {
