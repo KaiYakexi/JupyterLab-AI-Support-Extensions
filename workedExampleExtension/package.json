@@ -1,7 +1,7 @@
 {
-    "name": "extensionmanager",
+    "name": "workedExampleExtension",
     "version": "0.1.0",
-    "description": "Extension which adds the baseurl to the configuration and manages the on/off status of our ai support extensions",
+    "description": "On runtime errors, this extension creates a widget in which users can ask for a hint based on the worked example method",
     "keywords": [
         "jupyter",
         "jupyterlab",
@@ -38,7 +38,7 @@
         "clean": "jlpm clean:lib",
         "clean:lib": "rimraf lib tsconfig.tsbuildinfo",
         "clean:lintcache": "rimraf .eslintcache .stylelintcache",
-        "clean:labextension": "rimraf extensionmanager/labextension extensionmanager/_version.py",
+        "clean:labextension": "rimraf workedExampleExtension/labextension workedExampleExtension/_version.py",
         "clean:all": "jlpm clean:lib && jlpm clean:labextension && jlpm clean:lintcache",
         "eslint": "jlpm eslint:check --fix",
         "eslint:check": "eslint . --cache --ext .ts,.tsx",
@@ -55,10 +55,12 @@
         "watch:labextension": "jupyter labextension watch ."
     },
     "dependencies": {
-        "@jupyterlab/application": "^4.4.9",
-        "@jupyterlab/cells": "^4.5.0",
-        "@jupyterlab/coreutils": "^6.4.9",
-        "@jupyterlab/notebook": "^4.5.0"
+        "@jupyterlab/application": "^4.0.0",
+        "@jupyterlab/cells": "^4.4.9",
+        "@jupyterlab/notebook": "^4.4.9",
+        "vscode-jsonrpc": "^8.2.1",
+        "vscode-languageserver-protocol": "^3.17.5",
+        "vscode-ws-jsonrpc": "^3.5.0"
     },
     "devDependencies": {
         "@jupyterlab/builder": "^4.0.0",
@@ -81,7 +83,7 @@
         "stylelint-config-standard": "^34.0.0",
         "stylelint-csstree-validator": "^3.0.0",
         "stylelint-prettier": "^4.0.0",
-        "typescript": "~5.8.0",
+        "typescript": "^5.9.2",
         "yjs": "^13.5.0"
     },
     "sideEffects": [
@@ -94,7 +96,7 @@
     },
     "jupyterlab": {
         "extension": true,
-        "outputDir": "extensionmanager/labextension"
+        "outputDir": "workedExampleExtension/labextension"
     },
     "eslintIgnore": [
         "node_modules",
