@@ -16,7 +16,7 @@ interface LLMResponse {
   LLMResponse: string;
 }
 
-const supportType="workedExample"
+const supportType="instructionalText"
 
 class LLMResponseWidget extends Widget{
   private widgetContainer: HTMLElement;
@@ -160,7 +160,6 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
         const cellIdentifier=cellModel.getMetadata('cellIdentifier')
         const assignedSupportType=cellModel.getMetadata('supportType')
         const hintCounter=cellModel.getMetadata("hintCounter")
-        console.log("This worked example should be logged", assignedSupportType==supportType)
         if (assignedSupportType==supportType){
         const cellJson = cell.model.toJSON();
         const sourceCode : String = String(cellJson.source);
@@ -225,7 +224,7 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
 
  
 const plugin: JupyterFrontEndPlugin<void> = {
-  id: 'workedExampleExtension:plugin',
+  id: 'instructionalTextExtension:plugin',
   description: 'A JupyterLab LLM help extension.',
   autoStart: true,
   requires: [ICommandPalette, INotebookTracker],
