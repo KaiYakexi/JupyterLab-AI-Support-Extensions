@@ -157,7 +157,7 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
     if (cell) {
       const cellModel = cell.model;
       if (isCodeCellModel(cellModel)){
-        const cellIdentifier=cellModel.getMetadata('cellIdentifier')
+        const cellIdentifier=cellModel.getMetadata('identifier')
         const assignedSupportType=cellModel.getMetadata('supportType')
         const hintCounter=cellModel.getMetadata("hintCounter")
         if (assignedSupportType==supportType){
