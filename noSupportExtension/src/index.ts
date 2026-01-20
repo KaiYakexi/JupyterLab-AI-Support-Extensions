@@ -183,7 +183,7 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
       if (isCodeCellModel(cellModel)){
         const cellIdentifier=cellModel.getMetadata('identifier')
         const assignedSupportType=cellModel.getMetadata('supportType')
-        if (assignedSupportType!='workedExample' && assignedSupportType!='instrucionalText'){
+        if (assignedSupportType!='workedExample' && assignedSupportType!='instructionalText'){
         const cellJson = cell.model.toJSON();
         const sourceCode : String = String(cellJson.source);
         const execution_count=<Number>cellJson.execution_count;
