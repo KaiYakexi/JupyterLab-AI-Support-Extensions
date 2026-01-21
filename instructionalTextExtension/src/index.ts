@@ -4,9 +4,9 @@ import {
   JupyterFrontEndPlugin
 } from '@jupyterlab/application';
 
-import {CodeCellModel, isCodeCellModel} from '@jupyterlab/cells';
+import {CellModel, CodeCellModel, isCodeCellModel} from '@jupyterlab/cells';
 import {ICommandPalette, MainAreaWidget} from "@jupyterlab/apputils";
-import {INotebookTracker, NotebookActions, NotebookPanel, NotebookTracker} from '@jupyterlab/notebook'
+import {INotebookTracker, Notebook, NotebookActions, NotebookPanel, NotebookTracker} from '@jupyterlab/notebook'
 import {Widget} from '@lumino/widgets';
 import {IOutput} from '@jupyterlab/nbformat'
 import {PageConfig} from '@jupyterlab/coreutils';
@@ -151,13 +151,30 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
   }
   palette.addItem({ command, category: 'Tutorial' });
 
+ function getTaskDescription(notebook:Notebook, taskDescriptionCellId:string){
+  for (const cell of notebook.widgets){
+    console.log(<CellModel>cell.model);
+    console.log(taskDescriptionCellId)
+    if (cell.model.getMetadata(taskDescriptionCellId)!=undefined){
+      return cell.model
+    }
+  } return
+  }
+
+
 
   NotebookActions.executed.connect((_, args) => {
-    const { cell, success } = args;
+    const { cell, notebook, success } = args;
     if (cell) {
       const cellModel = cell.model;
       if (isCodeCellModel(cellModel)){
         const cellIdentifier=cellModel.getMetadata('identifier')
+        const taskDescriptionCell=getTaskDescription(notebook,cellIdentifier+"TaskDescription");
+        if (taskDescriptionCell!= null){
+          const taskDescriptionJson=taskDescriptionCell.toJSON();
+          const taskDescriptionContent: String= String(taskDescriptionJson.source)
+          console.log("This is my content"+taskDescriptionContent);
+        }
         const assignedSupportType=cellModel.getMetadata('supportType')
         const hintCounter=cellModel.getMetadata("hintCounter")
         if (assignedSupportType==supportType){
