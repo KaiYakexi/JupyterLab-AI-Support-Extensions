@@ -4,7 +4,7 @@ import {
   JupyterFrontEndPlugin
 } from '@jupyterlab/application';
 
-import {CellModel, CodeCellModel, isCodeCellModel} from '@jupyterlab/cells';
+import {CodeCellModel, isCodeCellModel} from '@jupyterlab/cells';
 import {ICommandPalette, MainAreaWidget} from "@jupyterlab/apputils";
 import {INotebookTracker, Notebook, NotebookActions, NotebookPanel, NotebookTracker} from '@jupyterlab/notebook'
 import {Widget} from '@lumino/widgets';
@@ -43,7 +43,7 @@ class LLMResponseWidget extends Widget{
     }
   }
 
-  async updateWidget(execution_count:Number,cellIdentifier:any,error: IOutput,sourceCode: String, hintCounter: Number): Promise<void>{
+  async updateWidget(execution_count:Number,cellIdentifier:any,error: IOutput,sourceCode: String, hintCounter: Number, taskDescriptionContent:String): Promise<void>{
       const errorContainer=document.createElement('div');
       errorContainer.classList.add('error-container');
       const errorHeader = document.createElement('div');
@@ -65,7 +65,7 @@ class LLMResponseWidget extends Widget{
       })
       renderer.renderModel(model);
       try {
-        const data = await askLLM(executionCounter,cellIdentifier,errorName,traceback,sourceCode, hintCounter) as LLMResponse;
+        const data = await askLLM(executionCounter,cellIdentifier,errorName,traceback,sourceCode, hintCounter, taskDescriptionContent) as LLMResponse;
         const model = this._rendermime.createModel({
           data: { 'text/markdown': data['LLMResponse'] }
         });
@@ -81,11 +81,11 @@ class LLMResponseWidget extends Widget{
       errorContainer.scrollIntoView({behavior:'smooth'});
     }
 
-    async function askLLM(executionCounter:String, cellIdentifier:any,errorName:String, traceback:String,sourceCode:String,hintCounter:Number): Promise<any> {
+    async function askLLM(executionCounter:String, cellIdentifier:any,errorName:String, traceback:String,sourceCode:String,hintCounter:Number, taskDescriptionContent: String): Promise<any> {
       let token = PageConfig.getToken();
       let JupyterHubBaseUrl= PageConfig.getOption("JupyterHubBaseUrl");
       const HubLLMEndpoint = JupyterHubBaseUrl+'/services/askLLM/errorLog';
-      const requestData = {'supportType':supportType,'cellIdentifier':cellIdentifier,executionCounter: executionCounter,errorName:errorName,traceback:traceback,sourceCode:sourceCode,hintCounter:hintCounter};
+      const requestData = {'supportType':supportType,'cellIdentifier':cellIdentifier,executionCounter: executionCounter,errorName:errorName,traceback:traceback,sourceCode:sourceCode,hintCounter:hintCounter, "taskDescription":taskDescriptionContent};
 
       const response = await fetch(HubLLMEndpoint, {
         method: 'POST',
@@ -153,10 +153,11 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
 
  function getTaskDescription(notebook:Notebook, taskDescriptionCellId:string){
   for (const cell of notebook.widgets){
-    console.log(<CellModel>cell.model);
-    console.log(taskDescriptionCellId)
-    if (cell.model.getMetadata(taskDescriptionCellId)!=undefined){
-      return cell.model
+    console.log(cell.model.getMetadata('identifier'))
+    if (cell.model.getMetadata('identifier')==taskDescriptionCellId){
+      const taskDescriptionJson= cell.model.toJSON()
+      const taskDescriptionContent: String= String(taskDescriptionJson.source)
+      return taskDescriptionContent
     }
   } return
   }
@@ -169,15 +170,10 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
       const cellModel = cell.model;
       if (isCodeCellModel(cellModel)){
         const cellIdentifier=cellModel.getMetadata('identifier')
-        const taskDescriptionCell=getTaskDescription(notebook,cellIdentifier+"TaskDescription");
-        if (taskDescriptionCell!= null){
-          const taskDescriptionJson=taskDescriptionCell.toJSON();
-          const taskDescriptionContent: String= String(taskDescriptionJson.source)
-          console.log("This is my content"+taskDescriptionContent);
-        }
         const assignedSupportType=cellModel.getMetadata('supportType')
         const hintCounter=cellModel.getMetadata("hintCounter")
         if (assignedSupportType==supportType){
+        const taskDescriptionContent=getTaskDescription(notebook,cellIdentifier+"TaskDescription") ?? "";
         const cellJson = cell.model.toJSON();
         const sourceCode : String = String(cellJson.source);
         const execution_count=<Number>cellJson.execution_count;
@@ -205,7 +201,7 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
           widget.content.clearPrompt();
         }
         lastExecutedCellId=cellIdentifier;
-        widget.content.updateWidget(execution_count,cellIdentifier,errors[0],sourceCode,hintCounter);
+        widget.content.updateWidget(execution_count,cellIdentifier,errors[0],sourceCode,hintCounter,taskDescriptionContent);
         }
         if (success) {
           const output=JSON.stringify(outputArray);
