@@ -46,7 +46,7 @@ class LLMResponseWidget extends Widget{
     this.node.appendChild(this.widgetContainer);
   }
 
-  async updateWidget(execution_count:Number,cellIdentifier:any,error: IOutput,sourceCode: String, hintCounter: Number, taskDescriptionContent:String,rendermime: IRenderMimeRegistry): Promise<void>{
+  async updateWidget(execution_count:number,cellIdentifier:any,error: IOutput,sourceCode: String, hintCounter: number, taskDescriptionContent:String,rendermime: IRenderMimeRegistry): Promise<void>{
       const errorContainer=document.createElement('div');
       errorContainer.classList.add('error-container');
 
@@ -65,8 +65,8 @@ class LLMResponseWidget extends Widget{
       const errorName = error['ename']?.toString()??'UndefinedErrorValue';
       //const errorContainer= this.widgetContainer.querySelector('.error-container');
       //const errorHeader= this.widgetContainer.querySelector('.error-errorHeader');
-      errorHeader.innerHTML=`<span class="error-number">Cell [${executionCounter}]</span> ${errorName}`;
-
+      const headerText = hintCounter < 3 ?  "Here's a similar example:": "The solution is the following:";
+      errorHeader.innerHTML=`<h3>${headerText}</h3>`;
       const waitingNodel = rendermime.createModel({
         data: { 'text/markdown': "#### Waiting for response from LLM..." }, trusted: true
       })
@@ -91,7 +91,7 @@ class LLMResponseWidget extends Widget{
     }
     
 
-    async function askLLM(executionCounter:String, cellIdentifier:any,errorName:String, traceback:String,sourceCode:String,hintCounter:Number, taskDescriptionContent: String): Promise<any> {
+    async function askLLM(executionCounter:String, cellIdentifier:any,errorName:String, traceback:String,sourceCode:String,hintCounter:number, taskDescriptionContent: String): Promise<any> {
       let token = PageConfig.getToken();
       let JupyterHubBaseUrl= PageConfig.getOption("JupyterHubBaseUrl");
       const HubLLMEndpoint = JupyterHubBaseUrl+'/services/askLLM/errorLog';
@@ -183,7 +183,7 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
         const taskDescriptionContent=getTaskDescription(notebook,cellIdentifier+"TaskDescription") ?? "";
         const cellJson = cell.model.toJSON();
         const sourceCode : String = String(cellJson.source);
-        const execution_count=<Number>cellJson.execution_count;
+        const execution_count=<number>cellJson.execution_count;
         if (execution_count){
         const outputCast = <CodeCellModel>cell.model;
         const outputs = outputCast.sharedModel.outputs;
@@ -223,7 +223,7 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
     }
   }});
 
-  async function logSuccess(execution_count:Number,cellIdentifier:any,outputArray:String,sourceCode:String, hintCounter:Number ): Promise<any>{
+  async function logSuccess(execution_count:number,cellIdentifier:any,outputArray:String,sourceCode:String, hintCounter:number ): Promise<any>{
     let token = PageConfig.getToken();
     const successEndpoint = JupyterHubBaseUrl+'/services/askLLM/successLog';
     const requestData = {'supportType':supportType,'cellIdentifier':cellIdentifier,executionCounter: execution_count,outputArray:outputArray,sourceCode:sourceCode,hintCounter:hintCounter};
