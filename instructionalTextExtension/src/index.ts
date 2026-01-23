@@ -1,16 +1,15 @@
 import {
-  ILayoutRestorer,
   JupyterFrontEnd,
   JupyterFrontEndPlugin
 } from '@jupyterlab/application';
 
 import {CodeCellModel, isCodeCellModel} from '@jupyterlab/cells';
 import {ICommandPalette, MainAreaWidget} from "@jupyterlab/apputils";
-import {INotebookTracker, Notebook, NotebookActions, NotebookPanel, NotebookTracker} from '@jupyterlab/notebook'
+import {INotebookTracker, Notebook, NotebookActions, NotebookTracker} from '@jupyterlab/notebook'
 import {Widget} from '@lumino/widgets';
 import {IOutput} from '@jupyterlab/nbformat'
 import {PageConfig} from '@jupyterlab/coreutils';
-import {IRenderMimeRegistry, RenderMimeRegistry, standardRendererFactories} from "@jupyterlab/rendermime";
+import {IRenderMimeRegistry} from "@jupyterlab/rendermime";
 
 interface LLMResponse {
   LLMResponse: string;
@@ -20,11 +19,12 @@ const supportType="instructionalText"
 
 class LLMResponseWidget extends Widget{
   private widgetContainer: HTMLElement;
-  private _rendermime:IRenderMimeRegistry;
+ // private _rendermime:IRenderMimeRegistry;
   //private renderer:IRenderMime.IRenderer;
   constructor(rendermime: IRenderMimeRegistry) {
     super();
-    this._rendermime= rendermime;
+    //this.node.appendChild(renderer.node);
+  //  this._rendermime= rendermime;
     this.addClass('LLM-responseWidget');
     this.widgetContainer = document.createElement('div');
     this.widgetContainer.classList.add('widget-container')
@@ -43,43 +43,48 @@ class LLMResponseWidget extends Widget{
     }
   }
 
-  async updateWidget(execution_count:Number,cellIdentifier:any,error: IOutput,sourceCode: String, hintCounter: Number, taskDescriptionContent:String): Promise<void>{
+  async updateWidget(execution_count:Number,cellIdentifier:any,error: IOutput,sourceCode: String, hintCounter: Number, taskDescriptionContent:String,rendermime: IRenderMimeRegistry): Promise<void>{
       const errorContainer=document.createElement('div');
       errorContainer.classList.add('error-container');
+
       const errorHeader = document.createElement('div');
       errorHeader.classList.add('error-errorHeader');
       errorContainer.appendChild(errorHeader)
-      const renderer= this._rendermime.createRenderer('text/markdown');
-      errorContainer.appendChild(renderer.node).classList.add('error-LLMDescription');
+
+      const llmrenderer= rendermime.createRenderer('text/markdown');
+      llmrenderer.node.classList.add('error-LLMDescription');
+      errorContainer.appendChild(llmrenderer.node);
       this.widgetContainer.appendChild(errorContainer);
+     // errorContainer.appendChild(renderer.node).classList.add('error-LLMDescription');
+    
       const executionCounter=execution_count.toString()
       const traceback = error['traceback']?.toString()??'UndefinedErrorValue';
       const errorName = error['ename']?.toString()??'UndefinedErrorValue';
       //const errorContainer= this.widgetContainer.querySelector('.error-container');
       //const errorHeader= this.widgetContainer.querySelector('.error-errorHeader');
-      if (errorHeader!=null){
-        errorHeader.innerHTML=`<span class="error-number">Cell [${executionCounter}]</span> ${errorName}`;}
-      if (errorContainer!=null){
-      const model = this._rendermime.createModel({
-        data: { 'text/markdown': "#Waiting for result..." }
+      errorHeader.innerHTML=`<span class="error-number">Cell [${executionCounter}]</span> ${errorName}`;
+
+      const waitingNodel = rendermime.createModel({
+        data: { 'text/markdown': "### Waiting for response from LLM..." }, trusted: true
       })
-      renderer.renderModel(model);
+      await llmrenderer.renderModel(waitingNodel);
       try {
         const data = await askLLM(executionCounter,cellIdentifier,errorName,traceback,sourceCode, hintCounter, taskDescriptionContent) as LLMResponse;
-        const model = this._rendermime.createModel({
-          data: { 'text/markdown': data['LLMResponse'] }
+        const resultModel = rendermime.createModel({
+          data: { 'text/markdown': data['LLMResponse'] },
+          trusted: true
         });
-        renderer.renderModel(model);
+        await llmrenderer.renderModel(resultModel);        
     } catch (er: unknown) {
-        if (er instanceof Error){
-          const model = this._rendermime.createModel({
-            data: { 'text/markdown': "#Error getting result" }
-          });
-          renderer.renderModel(model);
-      }
+        const errorModel = rendermime.createModel({
+            data: { 'text/markdown': "### Error getting feedback" },
+            trusted: true
+        });
+        await llmrenderer.renderModel(errorModel);
+      
     }
       errorContainer.scrollIntoView({behavior:'smooth'});
-    }
+    
 
     async function askLLM(executionCounter:String, cellIdentifier:any,errorName:String, traceback:String,sourceCode:String,hintCounter:Number, taskDescriptionContent: String): Promise<any> {
       let token = PageConfig.getToken();
@@ -103,7 +108,7 @@ class LLMResponseWidget extends Widget{
     }
   };
 
-function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebookTracker: NotebookTracker, notebookPanel:NotebookPanel, restorer:ILayoutRestorer){
+function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebookTracker: NotebookTracker, rendermime: IRenderMimeRegistry){
 
   const JupyterHubBaseUrl = PageConfig.getOption("JupyterHubBaseUrl");
 
@@ -137,9 +142,6 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
 
   }});
   function setWidget(){
-    const rendermime= new RenderMimeRegistry({
-      initialFactories: standardRendererFactories
-    });
     const content = new LLMResponseWidget(rendermime);
     widget = new MainAreaWidget({content});
     widget.id = 'LLMHelp-jupyterlab';
@@ -201,7 +203,7 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
           widget.content.clearPrompt();
         }
         lastExecutedCellId=cellIdentifier;
-        widget.content.updateWidget(execution_count,cellIdentifier,errors[0],sourceCode,hintCounter,taskDescriptionContent);
+        widget.content.updateWidget(execution_count,cellIdentifier,errors[0],sourceCode,hintCounter,taskDescriptionContent,rendermime);
         }
         if (success) {
           const output=JSON.stringify(outputArray);
@@ -240,7 +242,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
   id: 'instructionalTextExtension:plugin',
   description: 'A JupyterLab LLM help extension.',
   autoStart: true,
-  requires: [ICommandPalette, INotebookTracker],
+  requires: [ICommandPalette, INotebookTracker, IRenderMimeRegistry],
   activate: activateWidget};
   
 
