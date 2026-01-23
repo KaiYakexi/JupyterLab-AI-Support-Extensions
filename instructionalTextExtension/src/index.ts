@@ -77,8 +77,12 @@ class LLMResponseWidget extends Widget{
           data: { 'text/markdown': data['LLMResponse'] },
           trusted: true
         });
-        await llmrenderer.renderModel(resultModel);        
-    } catch (er: unknown) {
+        await llmrenderer.renderModel(resultModel);
+        await llmrenderer.renderModel(resultModel);
+        requestAnimationFrame(() => {
+          errorContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      } catch (er: unknown) {
         const errorModel = rendermime.createModel({
             data: { 'text/markdown': "#### Error getting feedback" },
             trusted: true
