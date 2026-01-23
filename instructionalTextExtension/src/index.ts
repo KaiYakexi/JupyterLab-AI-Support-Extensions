@@ -21,7 +21,7 @@ class LLMResponseWidget extends Widget{
   private widgetContainer: HTMLElement;
  // private _rendermime:IRenderMimeRegistry;
   //private renderer:IRenderMime.IRenderer;
-  constructor(rendermime: IRenderMimeRegistry) {
+  constructor() {
     super();
     //this.node.appendChild(renderer.node);
   //  this._rendermime= rendermime;
@@ -35,12 +35,15 @@ class LLMResponseWidget extends Widget{
     //this.renderer= this._rendermime.createRenderer('text/markdown');
     
   }
-  clearPrompt() {
-    const newSelector = this.widgetContainer.querySelector('.error-container');
-    console.log(newSelector)
-    if (newSelector){
-      this.widgetContainer.removeChild(newSelector);
+  clearPrompt(): void {
+
+    if (this.widgetContainer && this.widgetContainer.parentNode){
+      this.widgetContainer.parentNode.removeChild(this.widgetContainer)
     }
+
+    this.widgetContainer = document.createElement('div');
+    this.widgetContainer.classList.add('widget-container')
+    this.node.appendChild(this.widgetContainer);
   }
 
   async updateWidget(execution_count:Number,cellIdentifier:any,error: IOutput,sourceCode: String, hintCounter: Number, taskDescriptionContent:String,rendermime: IRenderMimeRegistry): Promise<void>{
@@ -65,7 +68,7 @@ class LLMResponseWidget extends Widget{
       errorHeader.innerHTML=`<span class="error-number">Cell [${executionCounter}]</span> ${errorName}`;
 
       const waitingNodel = rendermime.createModel({
-        data: { 'text/markdown': "### Waiting for response from LLM..." }, trusted: true
+        data: { 'text/markdown': "#### Waiting for response from LLM..." }, trusted: true
       })
       await llmrenderer.renderModel(waitingNodel);
       try {
@@ -77,7 +80,7 @@ class LLMResponseWidget extends Widget{
         await llmrenderer.renderModel(resultModel);        
     } catch (er: unknown) {
         const errorModel = rendermime.createModel({
-            data: { 'text/markdown': "### Error getting feedback" },
+            data: { 'text/markdown': "#### Error getting feedback" },
             trusted: true
         });
         await llmrenderer.renderModel(errorModel);
@@ -142,7 +145,7 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
 
   }});
   function setWidget(){
-    const content = new LLMResponseWidget(rendermime);
+    const content = new LLMResponseWidget();
     widget = new MainAreaWidget({content});
     widget.id = 'LLMHelp-jupyterlab';
     widget.title.label = 'LLM Help';
@@ -206,6 +209,7 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
         widget.content.updateWidget(execution_count,cellIdentifier,errors[0],sourceCode,hintCounter,taskDescriptionContent,rendermime);
         }
         if (success) {
+          lastExecutedCellId=cellIdentifier;
           const output=JSON.stringify(outputArray);
           logSuccess(execution_count,cellIdentifier,output,sourceCode, hintCounter);
           console.log('Logging successful cell run');
