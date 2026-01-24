@@ -61,12 +61,13 @@ class LLMResponseWidget extends Widget{
      // errorContainer.appendChild(renderer.node).classList.add('error-LLMDescription');
     
       const executionCounter=execution_count.toString()
+      const hintNumberDisplayed= hintCounter+1;
       const traceback = error['traceback']?.toString()??'UndefinedErrorValue';
       const errorName = error['ename']?.toString()??'UndefinedErrorValue';
       //const errorContainer= this.widgetContainer.querySelector('.error-container');
       //const errorHeader= this.widgetContainer.querySelector('.error-errorHeader');
-      const headerText = hintCounter < 3 ?  "Here's an explanation of the error:": "The solution is the following:";
-      errorHeader.innerHTML=`<h3>${headerText}</h3>`;
+      //errorHeader.innerHTML=`<span class="error-number">Cell [${errorData['execution_count']}]</span> ${errorData['errorName']}`;}
+      errorHeader.innerHTML=`<h3>Hint ${hintNumberDisplayed.toString()}/3 Here's an explanation of the error:</h3>`;
 
       const waitingNodel = rendermime.createModel({
         data: { 'text/markdown': "#### Waiting for response from LLM..." }, trusted: true
@@ -201,22 +202,28 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
         }
         if (!success) {
         cellModel.setMetadata("hintCounter",hintCounter+1);
+        if (hintCounter<3){
         if (!widget || widget.isDisposed) {
           setWidget()
           activateWidget()
           app.shell.add(widget, 'main',{ mode: 'split-right' });
         }
-        console.log('Error in Code, sending to LLM');
-        if (lastExecutedCellId!=cellIdentifier || hintCounter>=4) {
+        if (lastExecutedCellId!=cellIdentifier) {
           widget.content.clearPrompt();
         }
         lastExecutedCellId=cellIdentifier;
-        widget.content.updateWidget(execution_count,cellIdentifier,errors[0],sourceCode,hintCounter,taskDescriptionContent,rendermime);
+        widget.content.updateWidget(execution_count,cellIdentifier,errors[0],sourceCode,hintCounter,taskDescriptionContent,rendermime);}
+         else {
+          lastExecutedCellId=cellIdentifier;
+          const traceback = errors[0]['traceback']?.toString()??'UndefinedErrorValue';
+          const errorName = errors[0]['ename']?.toString()??'UndefinedErrorValue';
+          logFailure(execution_count,cellIdentifier,errorName,traceback,sourceCode, hintCounter,taskDescriptionContent)
+        }
         }
         if (success) {
           lastExecutedCellId=cellIdentifier;
           const output=JSON.stringify(outputArray);
-          logSuccess(execution_count,cellIdentifier,output,sourceCode, hintCounter);
+          logSuccess(execution_count,cellIdentifier,output,sourceCode, hintCounter,taskDescriptionContent);
           console.log('Logging successful cell run');
         }
       }
@@ -226,10 +233,10 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
     }
   }});
 
-  async function logSuccess(execution_count:number,cellIdentifier:any,outputArray:String,sourceCode:String, hintCounter:number ): Promise<any>{
+  async function logSuccess(executionCounter:number,cellIdentifier:any,outputArray:String,sourceCode:String, hintCounter:number,taskDescriptionContent:String ): Promise<any>{
     let token = PageConfig.getToken();
     const successEndpoint = JupyterHubBaseUrl+'/services/askLLM/successLog';
-    const requestData = {'supportType':supportType,'cellIdentifier':cellIdentifier,executionCounter: execution_count,outputArray:outputArray,sourceCode:sourceCode,hintCounter:hintCounter};
+    const requestData = {'supportType':supportType,'cellIdentifier':cellIdentifier,"executionCounter": executionCounter,"outputArray":outputArray,"sourceCode":sourceCode,"hintCounter":hintCounter,"taskDescriptionContent":taskDescriptionContent};
     const response = await fetch(successEndpoint, {
       method: 'POST',
       headers: {
@@ -242,6 +249,27 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
   }
   return response.json();
   }
+  async function logFailure(executionCounter:number,cellIdentifier:any, errorName:String, traceback:String,sourceCode:String, hintCounter:number,taskDescriptionContent:String): Promise<any> {
+    let token = PageConfig.getToken();
+    const HubLLMEndpoint = JupyterHubBaseUrl+'/services/askLLM/errorLog';
+    const requestData = {'supportType':supportType,'cellIdentifier':cellIdentifier,"executionCounter": executionCounter,"errorName":errorName,"traceback":traceback,"sourceCode":sourceCode, "hintCounter":hintCounter,"taskDescriptionContent":taskDescriptionContent};
+
+    const response = await fetch(HubLLMEndpoint, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`, 
+        'Content-Type': 'application/json' },
+      body: JSON.stringify(requestData),
+  });
+
+  if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  return response.json();
+}
+
+
+
 
 }
 
