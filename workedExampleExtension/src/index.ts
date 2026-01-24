@@ -201,8 +201,8 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
              outputArray.push(outputs[i]['text']);}
         }
         if (!success) {
-        cellModel.setMetadata("hintCounter",hintCounter+1);
         if (hintCounter<3){
+          cellModel.setMetadata("hintCounter",hintCounter+1);
         if (!widget || widget.isDisposed) {
           setWidget()
           activateWidget()
@@ -221,7 +221,6 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
         }
         }
         if (success) {
-          lastExecutedCellId=cellIdentifier;
           const output=JSON.stringify(outputArray);
           logSuccess(execution_count,cellIdentifier,output,sourceCode, hintCounter,taskDescriptionContent);
           console.log('Logging successful cell run');
