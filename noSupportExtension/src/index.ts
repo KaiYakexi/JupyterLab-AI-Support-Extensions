@@ -84,22 +84,26 @@ class LLMResponseWidget extends Widget{
       this.errorContainer.appendChild(errorHeader);
       this.errorContainer.appendChild(this.renderer.node).classList.add('error-LLMDescription');
       if (errorHeader!=null){
-        errorHeader.innerHTML=`<span class="error-number">Cell [${errorData['execution_count']}]</span> ${errorData['errorName']}`;}
+        const errorNumber = document.createElement('span');
+        errorNumber.classList.add('error-number');
+        errorNumber.textContent = `Cell [${errorData['execution_count']}]`;
+        errorHeader.appendChild(errorNumber);
+        errorHeader.appendChild(document.createTextNode(` ${errorData['errorName']}`));}
       if (this.errorContainer!=null){
       const model = this._rendermime.createModel({
-        data: { 'text/markdown': "#Waiting for result..." }
+        data: { 'text/markdown': "#Waiting for result..." }, trusted: false
       })
       this.renderer.renderModel(model);
       try {
         const data = await askLLM(errorData['execution_count'],errorData['errorName'],errorData['traceback'],errorData['sourceCode'],prompt) as LLMResponse;
         const model = this._rendermime.createModel({
-          data: { 'text/markdown': data['LLMResponse'] }
+          data: { 'text/markdown': data['LLMResponse'] }, trusted: false
         });
         this.renderer.renderModel(model);
     } catch (er: unknown) {
         if (er instanceof Error){
           const model = this._rendermime.createModel({
-            data: { 'text/markdown': "#Error getting result" }
+            data: { 'text/markdown': "#Error getting result" }, trusted: false
           });
           this.renderer.renderModel(model);
       }
@@ -116,8 +120,9 @@ class LLMResponseWidget extends Widget{
       const response = await fetch(HubLLMEndpoint, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`, 
-          'Content-Type': 'application/json' },
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest' },
         body: JSON.stringify(requestData),
     });
 
@@ -138,7 +143,6 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
   notebookTracker.currentChanged.connect(() => {
     const notebookPanel = notebookTracker.currentWidget;
     if (notebookPanel) {
-      console.log('Current notebook:', notebookPanel);
     }
   });
   /* Tracker is not working right now, might not be necessay
@@ -223,7 +227,8 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`, 
-        'Content-Type': 'application/json' },
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest' },
       body: JSON.stringify(requestData),
   });
   if (!response.ok) {
@@ -240,7 +245,8 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`, 
-        'Content-Type': 'application/json' },
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest' },
       body: JSON.stringify(requestData),
   });
 

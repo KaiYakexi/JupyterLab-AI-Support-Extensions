@@ -67,17 +67,19 @@ class LLMResponseWidget extends Widget{
       //const errorContainer= this.widgetContainer.querySelector('.error-container');
       //const errorHeader= this.widgetContainer.querySelector('.error-errorHeader');
       //errorHeader.innerHTML=`<span class="error-number">Cell [${errorData['execution_count']}]</span> ${errorData['errorName']}`;}
-      errorHeader.innerHTML=`<h3>Hint ${hintNumberDisplayed.toString()}/3 Here's an explanation of the error:</h3>`;
+      const h3 = document.createElement('h3');
+      h3.textContent = `Hint ${hintNumberDisplayed}/3 Here's an explanation of the error:`;
+      errorHeader.appendChild(h3);
 
       const waitingNodel = rendermime.createModel({
-        data: { 'text/markdown': "#### Waiting for response from LLM..." }, trusted: true
+        data: { 'text/markdown': "#### Waiting for response from LLM..." }, trusted: false
       })
       await llmrenderer.renderModel(waitingNodel);
       try {
         const data = await askLLM(executionCounter,cellIdentifier,errorName,traceback,sourceCode, hintCounter, taskDescriptionContent) as LLMResponse;
         const resultModel = rendermime.createModel({
           data: { 'text/markdown': data['LLMResponse'] },
-          trusted: true
+          trusted: false
         });
         await llmrenderer.renderModel(resultModel);
         await llmrenderer.renderModel(resultModel);
@@ -87,7 +89,7 @@ class LLMResponseWidget extends Widget{
       } catch (er: unknown) {
         const errorModel = rendermime.createModel({
             data: { 'text/markdown': "#### Error getting feedback" },
-            trusted: true
+            trusted: false
         });
         await llmrenderer.renderModel(errorModel);
       
@@ -104,8 +106,9 @@ class LLMResponseWidget extends Widget{
       const response = await fetch(HubLLMEndpoint, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`, 
-          'Content-Type': 'application/json' },
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest' },
         body: JSON.stringify(requestData),
     });
 
@@ -128,7 +131,6 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
   notebookTracker.currentChanged.connect(() => {
     const notebookPanel = notebookTracker.currentWidget;
     if (notebookPanel) {
-      console.log('Current notebook:', notebookPanel);
     }
   });
   /* Tracker is not working right now, might not be necessay
@@ -164,7 +166,6 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
 
  function getTaskDescription(notebook:Notebook, taskDescriptionCellId:string){
   for (const cell of notebook.widgets){
-    console.log(cell.model.getMetadata('identifier'))
     if (cell.model.getMetadata('identifier')==taskDescriptionCellId){
       const taskDescriptionJson= cell.model.toJSON()
       const taskDescriptionContent: String= String(taskDescriptionJson.source)
@@ -223,7 +224,6 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
         if (success) {
           const output=JSON.stringify(outputArray);
           logSuccess(execution_count,cellIdentifier,output,sourceCode, hintCounter,taskDescriptionContent);
-          console.log('Logging successful cell run');
         }
       }
     } else {}
@@ -240,7 +240,8 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`, 
-        'Content-Type': 'application/json' },
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest' },
       body: JSON.stringify(requestData),
   });
   if (!response.ok) {
@@ -257,7 +258,8 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`, 
-        'Content-Type': 'application/json' },
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest' },
       body: JSON.stringify(requestData),
   });
 

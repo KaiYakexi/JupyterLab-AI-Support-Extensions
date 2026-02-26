@@ -28,8 +28,9 @@ const plugin: JupyterFrontEndPlugin<void> = {
       const response = await fetch(UserSupportGroupEndpoint, {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${token}`, 
-            'Content-Type': 'application/json' },
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest' },
       })
       if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
