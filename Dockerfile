@@ -26,8 +26,8 @@ RUN cd /extension/extensionManager && \
 #RUN cd /extension/genericSupport && \
 #    pip install .
 
-#RUN cd /extension/noSupport && \
-#    pip install . 
+RUN cd /extension/noSupport && \
+   pip install . 
 
 #RUN cd /extension/personalizedSupport && \
 #    pip install .
