@@ -20,17 +20,17 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
 RUN cd /extension/extensionManager && \
     pip install .
 
-RUN cd /extension/customPrompt && \
-    pip install .
+#RUN cd /extension/customPrompt && \
+#    pip install .
 
-RUN cd /extension/genericSupport && \
-    pip install .
+#RUN cd /extension/genericSupport && \
+#    pip install .
 
 RUN cd /extension/noSupport && \
-    pip install . 
+   pip install . 
 
-RUN cd /extension/personalizedSupport && \
-    pip install .
+#RUN cd /extension/personalizedSupport && \
+#    pip install .
 
 RUN cd /extension/workedExampleExtension && \
     pip install .
