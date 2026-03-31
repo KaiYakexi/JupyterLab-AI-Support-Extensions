@@ -8,16 +8,19 @@ import { PageConfig } from '@jupyterlab/coreutils';
  * Initialization data for the extensionmanager extension.
  */
 
-const setJupyterHubBaseUrl="http://localhost:8533/jupyterhub"
-
-
 const plugin: JupyterFrontEndPlugin<void> = {
   id: 'extensionmanager:plugin',
   description: 'Extension which adds the baseurl to the configuration and manages the on/off status of our ai support extensions',
   autoStart: true,
   activate: (app: JupyterFrontEnd) => {
-    PageConfig.setOption("JupyterHubBaseUrl",setJupyterHubBaseUrl)
-    const JupyterHubBaseUrl=PageConfig.getOption("JupyterHubBaseUrl")
+    const hubPrefix = PageConfig.getOption("hubPrefix");
+    const hubBaseUrl = window.location.origin + hubPrefix.replace(/\/hub\/?$/, '');
+    PageConfig.setOption("JupyterHubBaseUrl", hubBaseUrl);
+    const JupyterHubBaseUrl = PageConfig.getOption("JupyterHubBaseUrl");
+
+    console.log('[extensionManager] hubPrefix:', JSON.stringify(hubPrefix));
+    console.log('[extensionManager] baseUrl:', PageConfig.getBaseUrl());
+    console.log('[extensionManager] resolved JupyterHubBaseUrl:', JupyterHubBaseUrl);
 
   async function getUserSupportGroup(): Promise<string> {
 
