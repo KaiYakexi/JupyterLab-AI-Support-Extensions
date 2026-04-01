@@ -10,9 +10,11 @@ This repository includes a GitHub Actions workflow that builds the Docker image 
 
 ### Setup
 
-1. In the Azure Portal, go to **Container Registries** > your registry > **Settings** > **Access keys** and enable **Admin user**.
+1. **Fork this repository** to your own GitHub account.
 
-2. In your GitHub repository, go to **Settings** > **Secrets and variables** > **Actions** and add the following secrets:
+2. In the Azure Portal, go to **Container Registries** > your registry > **Settings** > **Access keys** and enable **Admin user**.
+
+3. In your forked repository, go to **Settings** > **Secrets and variables** > **Actions** and add the following secrets:
 
    | Secret | Value |
    |---|---|
@@ -28,3 +30,11 @@ This repository includes a GitHub Actions workflow that builds the Docker image 
 3. Click **Run workflow**, choose a branch, and confirm.
 
 The workflow will build the Docker image and push it to your ACR tagged with both the commit SHA and `latest`.
+
+## Local Development / Single-Server
+
+If you are using this with the [JupyterHub LLM Extension](https://github.com/sixonenines/Jupyterhub_LLM_Extension) for local development or a single-server setup, build the Docker image directly from the root of this repository:
+
+```bash
+docker build -t jupyterlab-students:latest --label "courseName=jupyterlab-students" . --no-cache
+```
