@@ -13,6 +13,8 @@ import {IRenderMimeRegistry} from "@jupyterlab/rendermime";
 
 interface LLMResponse {
   LLMResponse: string;
+  feedbackWithheld?: boolean;
+  greyAreaZone?: string; // "above" | "below" | "in" | null
 }
 
 const supportType="workedExample"
@@ -46,7 +48,7 @@ class LLMResponseWidget extends Widget{
     this.node.appendChild(this.widgetContainer);
   }
 
-  async updateWidget(execution_count:number,cellIdentifier:any,error: IOutput,sourceCode: String, hintCounter: number, taskDescriptionContent:String,rendermime: IRenderMimeRegistry): Promise<void>{
+  async updateWidget(execution_count:number,cellIdentifier:any,error: IOutput,sourceCode: String, hintCounter: number, taskDescriptionContent:String,rendermime: IRenderMimeRegistry, KC: String): Promise<void>{
       const errorContainer=document.createElement('div');
       errorContainer.classList.add('error-container');
 
@@ -64,6 +66,7 @@ class LLMResponseWidget extends Widget{
       const hintNumberDisplayed= hintCounter+1;
       const traceback = error['traceback']?.toString()??'UndefinedErrorValue';
       const errorName = error['ename']?.toString()??'UndefinedErrorValue';
+      const errorMessage = error['evalue']?.toString()??'UndefinedErrorValue';
       //const errorContainer= this.widgetContainer.querySelector('.error-container');
       //const errorHeader= this.widgetContainer.querySelector('.error-errorHeader');
       //errorHeader.innerHTML=`<span class="error-number">Cell [${errorData['execution_count']}]</span> ${errorData['errorName']}`;}
@@ -76,12 +79,15 @@ class LLMResponseWidget extends Widget{
       })
       await llmrenderer.renderModel(waitingNodel);
       try {
-        const data = await askLLM(executionCounter,cellIdentifier,errorName,traceback,sourceCode, hintCounter, taskDescriptionContent) as LLMResponse;
+        const data = await askLLM(executionCounter,cellIdentifier,errorName,errorMessage,traceback,sourceCode, hintCounter, taskDescriptionContent, KC) as LLMResponse;
+        // The backend now returns the exact text to show in every case --
+        // a real LLM hint, or the above/below-Grey-Area message -- so this
+        // always renders data['LLMResponse'] directly. This also means
+        // whatever the student sees is exactly what gets logged server-side.
         const resultModel = rendermime.createModel({
           data: { 'text/markdown': data['LLMResponse'] },
           trusted: false
         });
-        await llmrenderer.renderModel(resultModel);
         await llmrenderer.renderModel(resultModel);
         requestAnimationFrame(() => {
           errorContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -97,11 +103,11 @@ class LLMResponseWidget extends Widget{
       errorContainer.scrollIntoView({behavior:'smooth'});
     
 
-    async function askLLM(executionCounter:String, cellIdentifier:any,errorName:String, traceback:String,sourceCode:String,hintCounter:number, taskDescriptionContent: String): Promise<any> {
+    async function askLLM(executionCounter:String, cellIdentifier:any,errorName:String, errorMessage:String, traceback:String,sourceCode:String,hintCounter:number, taskDescriptionContent: String, KC: String): Promise<any> {
       let token = PageConfig.getToken();
       let JupyterHubBaseUrl= PageConfig.getOption("JupyterHubBaseUrl");
       const HubLLMEndpoint = JupyterHubBaseUrl+'/services/askLLM/errorLog';
-      const requestData = {'supportType':supportType,'cellIdentifier':cellIdentifier,executionCounter: executionCounter,errorName:errorName,traceback:traceback,sourceCode:sourceCode,hintCounter:hintCounter, "taskDescription":taskDescriptionContent};
+      const requestData = {'supportType':supportType,'cellIdentifier':cellIdentifier,executionCounter: executionCounter,errorName:errorName,errorMessage:errorMessage,traceback:traceback,sourceCode:sourceCode,hintCounter:hintCounter, "taskDescription":taskDescriptionContent, "KC":KC};
 
       const response = await fetch(HubLLMEndpoint, {
         method: 'POST',
@@ -184,6 +190,7 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
         const cellIdentifier=cellModel.getMetadata('identifier')
         const assignedSupportType=cellModel.getMetadata('supportType')
         const hintCounter=cellModel.getMetadata("hintCounter")
+        const KC=cellModel.getMetadata("KC")
         if (assignedSupportType==supportType){
         const taskDescriptionContent=getTaskDescription(notebook,cellIdentifier+"TaskDescription") ?? "";
         const cellJson = cell.model.toJSON();
@@ -213,17 +220,18 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
           widget.content.clearPrompt();
         }
         lastExecutedCellId=cellIdentifier;
-        widget.content.updateWidget(execution_count,cellIdentifier,errors[0],sourceCode,hintCounter,taskDescriptionContent,rendermime);}
+        widget.content.updateWidget(execution_count,cellIdentifier,errors[0],sourceCode,hintCounter,taskDescriptionContent,rendermime,KC);}
          else {
           lastExecutedCellId=cellIdentifier;
           const traceback = errors[0]['traceback']?.toString()??'UndefinedErrorValue';
           const errorName = errors[0]['ename']?.toString()??'UndefinedErrorValue';
-          logFailure(execution_count,cellIdentifier,errorName,traceback,sourceCode, hintCounter,taskDescriptionContent)
+          const errorMessage = errors[0]['evalue']?.toString()??'UndefinedErrorValue';
+          logFailure(execution_count,cellIdentifier,errorName,errorMessage,traceback,sourceCode, hintCounter,taskDescriptionContent,KC)
         }
         }
         if (success) {
           const output=JSON.stringify(outputArray);
-          logSuccess(execution_count,cellIdentifier,output,sourceCode, hintCounter,taskDescriptionContent);
+          logSuccess(execution_count,cellIdentifier,output,sourceCode, hintCounter,taskDescriptionContent,KC);
         }
       }
     } else {}
@@ -232,10 +240,10 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
     }
   }});
 
-  async function logSuccess(executionCounter:number,cellIdentifier:any,outputArray:String,sourceCode:String, hintCounter:number,taskDescriptionContent:String ): Promise<any>{
+  async function logSuccess(executionCounter:number,cellIdentifier:any,outputArray:String,sourceCode:String, hintCounter:number,taskDescriptionContent:String, KC:String ): Promise<any>{
     let token = PageConfig.getToken();
     const successEndpoint = JupyterHubBaseUrl+'/services/askLLM/successLog';
-    const requestData = {'supportType':supportType,'cellIdentifier':cellIdentifier,"executionCounter": executionCounter,"outputArray":outputArray,"sourceCode":sourceCode,"hintCounter":hintCounter,"taskDescriptionContent":taskDescriptionContent};
+    const requestData = {'supportType':supportType,'cellIdentifier':cellIdentifier,"executionCounter": executionCounter,"outputArray":outputArray,"sourceCode":sourceCode,"hintCounter":hintCounter,"taskDescriptionContent":taskDescriptionContent,"KC":KC};
     const response = await fetch(successEndpoint, {
       method: 'POST',
       headers: {
@@ -249,10 +257,10 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
   }
   return response.json();
   }
-  async function logFailure(executionCounter:number,cellIdentifier:any, errorName:String, traceback:String,sourceCode:String, hintCounter:number,taskDescriptionContent:String): Promise<any> {
+  async function logFailure(executionCounter:number,cellIdentifier:any, errorName:String, errorMessage:String, traceback:String,sourceCode:String, hintCounter:number,taskDescriptionContent:String, KC:String): Promise<any> {
     let token = PageConfig.getToken();
     const HubLLMEndpoint = JupyterHubBaseUrl+'/services/askLLM/errorLog';
-    const requestData = {'supportType':supportType,'cellIdentifier':cellIdentifier,"executionCounter": executionCounter,"errorName":errorName,"traceback":traceback,"sourceCode":sourceCode, "hintCounter":hintCounter,"taskDescriptionContent":taskDescriptionContent};
+    const requestData = {'supportType':supportType,'cellIdentifier':cellIdentifier,"executionCounter": executionCounter,"errorName":errorName,"errorMessage":errorMessage,"traceback":traceback,"sourceCode":sourceCode, "hintCounter":hintCounter,"taskDescriptionContent":taskDescriptionContent,"KC":KC};
 
     const response = await fetch(HubLLMEndpoint, {
       method: 'POST',
