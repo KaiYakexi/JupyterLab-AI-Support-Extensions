@@ -5,7 +5,11 @@ COPY ./genericSupportExtension /extension/genericSupport
 COPY ./noSupportExtension /extension/noSupport
 COPY ./personalizedSupportExtension /extension/personalizedSupport
 COPY ./workedExampleExtension /extension/workedExampleExtension
-COPY ./instructionalTextExtension /extension/instructionalTextExtension
+# instructionalTextExtension is retired: workedExampleExtension now hosts
+# BOTH hint styles as the merged "adaptiveSupport" extension, dispatching
+# per-attempt based on the student's live Grey Area zone (see its
+# src/index.ts). Not copied at all, since there's nothing left to build.
+# COPY ./instructionalTextExtension /extension/instructionalTextExtension
 COPY ./extensionManager /extension/extensionManager
 
 USER root
@@ -35,8 +39,8 @@ RUN cd /extension/noSupport && \
 RUN cd /extension/workedExampleExtension && \
     pip install .
 
-RUN cd /extension/instructionalTextExtension && \
-    pip install .
+#RUN cd /extension/instructionalTextExtension && \
+#    pip install .
 
 RUN git clone https://github.com/KaiYakexi/jupy-cell-lock.git /jupy-cell-lock && \
     cd /jupy-cell-lock && \
