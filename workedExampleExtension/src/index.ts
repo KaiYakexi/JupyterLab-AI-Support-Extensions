@@ -125,10 +125,16 @@ class LLMResponseWidget extends Widget{
         this.widgetContainer.appendChild(errorContainer);
 
         const h3 = document.createElement('h3');
+        // No "Hint N/6" counter in the heading any more (it confused
+        // students). hintNumber is still logged server-side.
         if (data['hintTypeUsed']==='workedExample'){
-          h3.textContent = `Hint ${data['hintNumber']}/6 Here's a similar example`;
+          h3.textContent = `Here's a similar example`;
         } else if (data['hintTypeUsed']==='instructionalText'){
-          h3.textContent = `Hint ${data['hintNumber']}/6 Here's an explanation of the error:`;
+          h3.textContent = `Here's an explanation of the error:`;
+        } else if (data['greyAreaZone']==='below'){
+          // Worked-example hints used up while still below the Grey Area:
+          // the backend sends the "please ask a TA" text.
+          h3.textContent = `No more hints available`;
         } else {
           h3.textContent = `No hint needed`;
         }
